@@ -25,6 +25,9 @@ app.use(cors());
 app.use(express.json());
 
 // API Routes
+app.use("/",()=>{
+  console.log("Backend is running")
+})
 app.use("/api/v1", mainRoute);
 
 // Default Route
