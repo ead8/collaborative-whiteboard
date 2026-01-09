@@ -1,16 +1,25 @@
 import React, { useEffect, useRef, useState } from 'react';
 
+const COLOR_MAP = {
+  black: '#1e293b',
+  red: '#ef4444',
+  blue: '#3b82f6',
+  green: '#10b981',
+  purple: '#8b5cf6',
+  orange: '#f59e0b',
+};
+
 const DrawingCanvas = ({ socket, roomId, color, strokeWidth, tool }) => {
   const canvasRef = useRef();
   const ctxRef = useRef();
   const [drawing, setDrawing] = useState(false);
 
-  const colorRef = useRef(color);
+  const colorRef = useRef(COLOR_MAP[color] || color);
   const widthRef = useRef(strokeWidth);
 
   // Update refs on prop change
   useEffect(() => {
-    colorRef.current = color;
+    colorRef.current = COLOR_MAP[color] || color;
     widthRef.current = strokeWidth;
   }, [color, strokeWidth]);
 
@@ -22,6 +31,11 @@ const DrawingCanvas = ({ socket, roomId, color, strokeWidth, tool }) => {
       const { width, height } = canvas.parentElement.getBoundingClientRect();
       canvas.width = width;
       canvas.height = height;
+      
+      // Set white background
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, width, height);
     };
 
     resizeCanvas();
@@ -102,7 +116,9 @@ const DrawingCanvas = ({ socket, roomId, color, strokeWidth, tool }) => {
 
     const handleClearCanvas = () => {
       const canvas = canvasRef.current;
-      ctxRef.current.clearRect(0, 0, canvas.width, canvas.height);
+      const ctx = ctxRef.current;
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
     };
 
     socket.on('draw-start', handleDrawStart);
@@ -125,7 +141,7 @@ const DrawingCanvas = ({ socket, roomId, color, strokeWidth, tool }) => {
       onMouseMove={draw}
       onMouseUp={endDrawing}
       onMouseLeave={endDrawing}
-      className="absolute inset-0 z-0"
+      className="absolute inset-0 z-10 cursor-crosshair"
     />
   );
 };

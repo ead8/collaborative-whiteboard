@@ -45,7 +45,7 @@ const UserCursors = ({ roomId }) => {
       {Object.entries(cursors).map(([userId, { x, y, color }]) => (
         <div
           key={userId}
-          className="pointer-events-none fixed z-50"
+          className="pointer-events-none fixed z-50 transition-all duration-75 ease-out"
           style={{
             left: `${x}px`,
             top: `${y}px`,
@@ -53,7 +53,7 @@ const UserCursors = ({ roomId }) => {
           }}
         >
           <div
-            className="w-3 h-3 rounded-full"
+            className="w-3 h-3 rounded-full border border-white shadow-sm"
             style={{ backgroundColor: color }}
           ></div>
         </div>

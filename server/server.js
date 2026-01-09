@@ -15,8 +15,9 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: '*',
-    methods: ['GET', 'POST']
+    origin: process.env.CLIENT_URL || '*',
+    methods: ['GET', 'POST'],
+    credentials: true
   }
 });
 
@@ -25,9 +26,7 @@ app.use(cors());
 app.use(express.json());
 
 // API Routes
-app.use("/",()=>{
-  console.log("Backend is running")
-})
+
 app.use("/api/v1", mainRoute);
 
 // Default Route
@@ -39,6 +38,7 @@ app.get("/", (req, res) => {
 socketHandlers(io);
 
 // Start server
-server.listen(process.env.PORT, () => {
-  console.log(`server is running at ${process.env.PORT}`);
+const PORT = process.env.PORT || 8000;
+server.listen(PORT, () => {
+  console.log(`server is running at ${PORT}`);
 });

@@ -5,8 +5,6 @@ import Toolbar from './Toolbar';
 import UserCursors from './UserCursors';
 import { getSocket } from '../socket.js';
 
-const channel = new BroadcastChannel('whiteboard-sync');
-
 const Whiteboard = () => {
   const { roomId } = useParams();
   const [userCount, setUserCount] = useState(1);
@@ -16,6 +14,7 @@ const Whiteboard = () => {
 
   const socketRef = useRef(null);
   const hasJoinedRef = useRef(false);
+  const channelRef = useRef(null);
 
   useEffect(() => {
     socketRef.current = getSocket();
@@ -33,12 +32,11 @@ const Whiteboard = () => {
     };
   }, [roomId]);
 
-  const handleClearCanvas = () => {
-    socketRef.current.emit('clear-canvas', { roomId });
-    channel.postMessage({ type: 'clear-canvas' });
-  };
-
+  // Initialize BroadcastChannel
   useEffect(() => {
+    channelRef.current = new BroadcastChannel('whiteboard-sync');
+
+    const channel = channelRef.current;
     channel.onmessage = (event) => {
       const { type, data } = event.data;
 
@@ -46,44 +44,71 @@ const Whiteboard = () => {
       if (type === 'stroke-change') setStrokeWidth(data.strokeWidth);
       if (type === 'tool-change') setTool(data.tool);
       if (type === 'clear-canvas') {
-        socketRef.current.emit('clear-canvas', { roomId });
+        socketRef.current?.emit('clear-canvas', { roomId });
       }
     };
 
     return () => {
-      channel.close();
+      if (channelRef.current) {
+        channelRef.current.close();
+        channelRef.current = null;
+      }
     };
-  }, []);
+  }, [roomId]);
+
+  const handleClearCanvas = () => {
+    socketRef.current?.emit('clear-canvas', { roomId });
+    if (channelRef.current) {
+      channelRef.current.postMessage({ type: 'clear-canvas' });
+    }
+  };
+
+  const safePostMessage = (type, data) => {
+    if (channelRef.current) {
+      try {
+        channelRef.current.postMessage({ type, data });
+      } catch (error) {
+        console.warn('BroadcastChannel postMessage failed:', error);
+      }
+    }
+  };
 
   return (
-    <div className="w-screen h-screen flex flex-col items-center bg-gray-100">
-      <div className="w-full p-4 bg-gray-300 flex items-center justify-between shadow-md text-center">
-        <h1 className="text-xl text-blue-950 font-semibold">
-          RoomId: <span className="text-gray-500">{roomId}</span>
-        </h1>
-        <p className="text-sm text-gray-700">Active users: {userCount}</p>
+    <div className="w-screen h-screen flex flex-col items-center bg-slate-50">
+      <div className="w-full px-4 py-2.5 bg-white border-b border-slate-200 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <h1 className="text-sm font-medium text-slate-900">
+            Room: <span className="text-blue-600 font-mono">{roomId}</span>
+          </h1>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+          <span className="text-sm text-slate-600">
+            <span className="font-medium">{userCount}</span> {userCount === 1 ? 'user' : 'users'}
+          </span>
+        </div>
       </div>
 
       <Toolbar
         color={color}
         setColor={(c) => {
           setColor(c);
-          channel.postMessage({ type: 'color-change', data: { color: c } });
+          safePostMessage('color-change', { color: c });
         }}
         strokeWidth={strokeWidth}
         setStrokeWidth={(w) => {
           setStrokeWidth(w);
-          channel.postMessage({ type: 'stroke-change', data: { strokeWidth: w } });
+          safePostMessage('stroke-change', { strokeWidth: w });
         }}
         onClear={handleClearCanvas}
         tool={tool}
         setTool={(t) => {
           setTool(t);
-          channel.postMessage({ type: 'tool-change', data: { tool: t } });
+          safePostMessage('tool-change', { tool: t });
         }}
       />
 
-      <div className="relative w-full h-full overflow-hidden">
+      <div className="relative w-full h-full overflow-hidden bg-white">
         <DrawingCanvas
           socket={socketRef.current}
           roomId={roomId}

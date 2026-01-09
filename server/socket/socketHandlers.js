@@ -2,13 +2,13 @@ const roomUsers = {}; // Global map
 
 export const socketHandlers = (io) => {
   io.on("connection", (socket) => {
-    console.log("🔌 New connection:", socket.id);
+    console.log(" New connection:", socket.id);
 
     socket.on("join-room", (roomId) => {
       if (!roomId) return;
 
       if (socket.roomId === roomId) {
-        console.log(`⚠️ Socket ${socket.id} already in room ${roomId}`);
+        console.log(` Socket ${socket.id} already in room ${roomId}`);
         return;
       }
 
@@ -22,13 +22,13 @@ export const socketHandlers = (io) => {
       roomUsers[roomId].add(socket.id);
 
       const count = roomUsers[roomId].size;
-      console.log(`✅ User ${socket.id} joined room ${roomId}`);
-      console.log(`👥 Room ${roomId} size:`, count);
-      console.log(`📦 Socket.IO sees:`, io.sockets.adapter.rooms.get(roomId)?.size || 0);
+      console.log(` User ${socket.id} joined room ${roomId}`);
+      console.log(` Room ${roomId} size:`, count);
+      console.log(` Socket.IO sees:`, io.sockets.adapter.rooms.get(roomId)?.size || 0);
       io.to(roomId).emit("user-count", count);
     });
 
-    // ✅ Draw events
+    //  Draw events
     socket.on("draw-start", (data) => {
       socket.to(data.roomId).emit("draw-start", data);
     });
@@ -45,7 +45,7 @@ export const socketHandlers = (io) => {
       io.to(roomId).emit("clear-canvas");
     });
 
-    // ✅ Cursor sync
+    //  Cursor sync
     socket.on("cursor-move", (data) => {
       socket.to(data.roomId).emit("cursor-update", data);
     });
@@ -63,7 +63,7 @@ export const socketHandlers = (io) => {
         io.to(roomId).emit("user-count", count);
       }
 
-      console.log("❌ Disconnected:", socket.id);
+      console.log(" Disconnected:", socket.id);
     });
   });
 };
